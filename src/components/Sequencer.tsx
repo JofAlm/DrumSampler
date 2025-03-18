@@ -9,37 +9,16 @@ interface SequencerProps {
 
 const Sequencer: React.FC<SequencerProps> = ({ sounds, bpm, setBpm }) => {
   const [sequence, setSequence] = useState(
-    Array.from({ length: 16 }, () => Array(32).fill(false))
+    Array.from({ length: 16 }, () => Array(128).fill(false)) // 128 steg och 16 ljud
   );
   const [players, setPlayers] = useState<Tone.Players | null>(null);
   const [currentStep, setCurrentStep] = useState<number | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [sequenceLoop, setSequenceLoop] = useState<Tone.Sequence | null>(null);
 
-  const rainbowColors = [
-    "#FF0000",
-    "#FF7F00",
-    "#FFFF00",
-    "#00FF00",
-    "#0000FF",
-    "#4B0082",
-    "#9400D3",
-    "#FF1493",
-    "#00CED1",
-    "#FFD700",
-    "#8A2BE2",
-    "#32CD32",
-    "#DC143C",
-    "#FF4500",
-    "#ADFF2F",
-    "#20B2AA",
-  ];
-
   useEffect(() => {
     const loadSounds = async () => {
       await Tone.start();
-      console.log("AudioContext aktiverat!");
-
       const loadedPlayers = new Tone.Players(
         Object.fromEntries(
           Object.entries(sounds).map(([key, file]) => [key, `/assets/${file}`])
@@ -48,16 +27,21 @@ const Sequencer: React.FC<SequencerProps> = ({ sounds, bpm, setBpm }) => {
 
       await Tone.loaded();
       setPlayers(loadedPlayers);
-      console.log("Alla ljud laddade!");
     };
 
     loadSounds();
   }, [sounds]);
+  useEffect(() => {
+    const gridContainer = document.querySelector(".grid-container");
+    if (gridContainer) {
+      gridContainer.scrollTop = 0; // Scrollar automatiskt till toppen vid rendering
+    }
+  }, []);
 
-  const toggleStep = (rowIndex: number, stepIndex: number) => {
+  const toggleStep = (trackIndex: number, stepIndex: number) => {
     setSequence((prevSequence) =>
-      prevSequence.map((row, rIdx) =>
-        rIdx === rowIndex
+      prevSequence.map((row, tIdx) =>
+        tIdx === trackIndex
           ? row.map((step, sIdx) => (sIdx === stepIndex ? !step : step))
           : row
       )
@@ -76,16 +60,16 @@ const Sequencer: React.FC<SequencerProps> = ({ sounds, bpm, setBpm }) => {
     const loop = new Tone.Sequence(
       (time, step) => {
         setCurrentStep(step);
-        sequence.forEach((row, trackIndex) => {
+        sequence.forEach((row, soundIndex) => {
           if (row[step]) {
-            const player = players.player(trackIndex.toString());
+            const player = players.player(soundIndex.toString());
             if (player) {
               player.start(time);
             }
           }
         });
       },
-      Array.from({ length: 32 }, (_, i) => i),
+      Array.from({ length: 128 }, (_, i) => i), // 128 steg
       "16n"
     ).start(0);
 
@@ -119,40 +103,46 @@ const Sequencer: React.FC<SequencerProps> = ({ sounds, bpm, setBpm }) => {
             onChange={(e) => setBpm(Number(e.target.value))}
           />
         </label>
-      </div>
-      <div className="grid-container">
-        {Object.entries(sounds).map(([trackIndex, sound], rowIdx) => (
-          <div className="row" key={trackIndex}>
-            <button
-              className="sample-button"
-              onClick={() => playSample(Number(trackIndex))}
-            >
-              {sound}
-            </button>
-            {sequence[rowIdx].map((active, stepIdx) => (
-              <div
-                key={stepIdx}
-                className={`step ${active ? "active" : ""} 
-                  ${stepIdx % 4 === 0 ? "beat-marker" : ""} 
-                  ${stepIdx === currentStep ? "playing" : ""}`}
-                onClick={() => toggleStep(rowIdx, stepIdx)}
-                style={{
-                  backgroundColor: active
-                    ? rainbowColors[rowIdx % rainbowColors.length]
-                    : "",
-                }}
-              />
-            ))}
-          </div>
-        ))}
-      </div>
-      <div className="playback-controls">
         <button onClick={playSequence} disabled={isPlaying}>
           ▶ PLAY
         </button>
         <button onClick={stopSequence} disabled={!isPlaying}>
           ■ STOP
         </button>
+      </div>
+      <div className="sound-labels">
+        {Object.keys(sounds).map((sound, trackIdx) => (
+          <div key={trackIdx} className="sound-label">
+            <button
+              className="sample-button"
+              onClick={() => playSample(Number(trackIdx))}
+            >
+              {sounds[Number(trackIdx)]}
+            </button>
+          </div>
+        ))}
+      </div>
+      <div className="grid-container">
+        <div className="number-column">
+          {Array.from({ length: 128 }).map((_, stepIdx) => (
+            <div key={stepIdx} className="step-number">
+              {stepIdx + 1}
+            </div>
+          ))}
+        </div>
+        {Object.keys(sounds).map((sound, trackIdx) => (
+          <div key={trackIdx} className="column">
+            {sequence[trackIdx].map((active, stepIdx) => (
+              <div
+                key={stepIdx}
+                className={`step ${active ? "active" : ""}
+                  ${stepIdx % 4 === 0 ? "beat-marker" : ""}
+                  ${stepIdx === currentStep ? "playing" : ""}`}
+                onClick={() => toggleStep(trackIdx, stepIdx)}
+              />
+            ))}
+          </div>
+        ))}
       </div>
     </div>
   );
