@@ -65,8 +65,9 @@ body {
 
 .step,
 .step-number {
-  width: 83px;
-  height: 83px;
+  width: 42px; /* Tidigare 85px → nu 50% mindre */
+  height: 42px; /* Tidigare 85px → nu 50% mindre */
+  font-size: 10px; /* Minska textstorleken så det ser bra ut */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -102,8 +103,10 @@ body {
   justify-content: center;
   width: calc(100% - 100px);
   background-color: #333;
-  padding: 15px;
-  border-radius: 10px;
+  padding-left: 20px;
+  padding-bottom: 10px;
+  padding-top: 10px;
+  padding-right: 0px;
   position: sticky;
   top: 50px;
   z-index: 5;
@@ -116,7 +119,9 @@ body {
   text-align: center;
   border-radius: 4px;
   cursor: pointer;
-  width: 83px;
+  width: 44px; /* Tidigare 85px → nu 50% mindre */
+  height: 44px; /* Samma höjd som rutorna */
+  font-size: 9px; /* Gör texten mindre så den får plats */
   text-overflow: ellipsis;
   white-space: nowrap;
   overflow: auto;
