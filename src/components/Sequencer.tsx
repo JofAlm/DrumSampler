@@ -123,7 +123,7 @@ const Sequencer: React.FC<SequencerProps> = ({ sounds, bpm, setBpm }) => {
                 className="sample-button"
                 onClick={() => playSample(Number(trackIdx))}
               >
-                {sounds[Number(trackIdx)]}
+                {/* Tom knapp utan text */}
               </button>
             </div>
           ))}
