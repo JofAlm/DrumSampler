@@ -8,7 +8,6 @@ interface SequencerProps {
 }
 
 const Sequencer: React.FC<SequencerProps> = ({ sounds, bpm, setBpm }) => {
-  // Skapar en 2D-array för sequencern (8 ljudrader, 64 steg per rad)
   const [sequence, setSequence] = useState(
     Array.from({ length: 8 }, () => Array(64).fill(false))
   );
@@ -16,6 +15,7 @@ const Sequencer: React.FC<SequencerProps> = ({ sounds, bpm, setBpm }) => {
   const [currentStep, setCurrentStep] = useState<number | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [sequenceLoop, setSequenceLoop] = useState<Tone.Sequence | null>(null);
+  const [volume, setVolume] = useState<number>(-12); // Default volume in decibels
 
   useEffect(() => {
     const loadSounds = async () => {
@@ -23,7 +23,7 @@ const Sequencer: React.FC<SequencerProps> = ({ sounds, bpm, setBpm }) => {
       const loadedPlayers = new Tone.Players(
         Object.fromEntries(
           Object.entries(sounds)
-            .slice(0, 8) // Begränsar till 8 ljud
+            .slice(0, 8)
             .map(([key, file]) => [key, `/assets/${file}`])
         )
       ).toDestination();
@@ -35,7 +35,10 @@ const Sequencer: React.FC<SequencerProps> = ({ sounds, bpm, setBpm }) => {
     loadSounds();
   }, [sounds]);
 
-  // Funktion för att toggla et steg i sequencern (på/av)
+  useEffect(() => {
+    Tone.Master.volume.value = volume;
+  }, [volume]);
+
   const toggleStep = (trackIndex: number, stepIndex: number) => {
     setSequence((prevSequence) =>
       prevSequence.map((row, tIdx) =>
@@ -46,7 +49,6 @@ const Sequencer: React.FC<SequencerProps> = ({ sounds, bpm, setBpm }) => {
     );
   };
 
-  // Startar sequencern och spelar ljud baserat på aktiva steg
   const playSequence = () => {
     if (!players) return;
     Tone.Transport.bpm.value = bpm;
@@ -68,7 +70,7 @@ const Sequencer: React.FC<SequencerProps> = ({ sounds, bpm, setBpm }) => {
           }
         });
       },
-      Array.from({ length: 64 }, (_, i) => i), // 64 steg
+      Array.from({ length: 64 }, (_, i) => i),
       "16n"
     ).start(0);
 
@@ -76,7 +78,6 @@ const Sequencer: React.FC<SequencerProps> = ({ sounds, bpm, setBpm }) => {
     setIsPlaying(true);
   };
 
-  // Stoppar sequencern
   const stopSequence = () => {
     Tone.Transport.stop();
     setCurrentStep(null);
@@ -86,7 +87,6 @@ const Sequencer: React.FC<SequencerProps> = ({ sounds, bpm, setBpm }) => {
     setIsPlaying(false);
   };
 
-  // Spelar ett ljud när en sample-knapp trycks
   const playSample = (track: number) => {
     if (players) {
       players.player(track.toString()).start();
@@ -95,7 +95,6 @@ const Sequencer: React.FC<SequencerProps> = ({ sounds, bpm, setBpm }) => {
 
   return (
     <div className="sequencer">
-      {/* Kontrollpanel med BPM och play/stop-knappar */}
       <div className="controls">
         <label>
           BPM:
@@ -103,6 +102,16 @@ const Sequencer: React.FC<SequencerProps> = ({ sounds, bpm, setBpm }) => {
             type="number"
             value={bpm}
             onChange={(e) => setBpm(Number(e.target.value))}
+          />
+        </label>
+        <label>
+          Volume:
+          <input
+            type="range"
+            min="-60"
+            max="6"
+            value={volume}
+            onChange={(e) => setVolume(Number(e.target.value))}
           />
         </label>
         <button onClick={playSequence} disabled={isPlaying}>
@@ -113,25 +122,20 @@ const Sequencer: React.FC<SequencerProps> = ({ sounds, bpm, setBpm }) => {
         </button>
       </div>
 
-      {/* Knapp-rad för att spela upp varje ljud individuellt */}
       <div className="sound-labels">
         {Object.keys(sounds)
-          .slice(0, 8) // Begränsar till 8 ljud
+          .slice(0, 8)
           .map((sound, trackIdx) => (
             <div key={trackIdx} className="sound-label">
               <button
                 className="sample-button"
                 onClick={() => playSample(Number(trackIdx))}
-              >
-                {/* Tom knapp utan text */}
-              </button>
+              ></button>
             </div>
           ))}
       </div>
 
-      {/* Grid-container för sequencern */}
       <div className="grid-container">
-        {/* Nummerkolumn för att visa stegnumrering */}
         <div className="number-column">
           {Array.from({ length: 64 }).map((_, stepIdx) => (
             <div key={stepIdx} className="step-number">
@@ -140,9 +144,8 @@ const Sequencer: React.FC<SequencerProps> = ({ sounds, bpm, setBpm }) => {
           ))}
         </div>
 
-        {/* Skapar 8 spår i sequencern */}
         {Object.keys(sounds)
-          .slice(0, 8) // Begränsar till 8 ljud
+          .slice(0, 8)
           .map((sound, trackIdx) => (
             <div key={trackIdx} className="column">
               {sequence[trackIdx].map((active, stepIdx) => (
